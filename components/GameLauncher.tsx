@@ -9,23 +9,20 @@ function launchGame(game: Game) {
   const pkg = game.packageName;
   if (!pkg) return;
 
-  // 1. Tenta abrir via intent (Android Chrome / WebAPK)
-  const intentUrl = `intent://launch/#Intent;package=${pkg};scheme=https;end`;
-  // 2. Fallback: abre Play Store
   const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
 
-  // Cria link temporário e clica
-  const a = document.createElement("a");
-  a.href = intentUrl;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  // Android Intent via window.location — única forma confiável no Chrome Android
+  // intent://<pkg>#Intent;package=<pkg>;scheme=<pkg>;end
+  const intentUrl = `intent://${pkg}#Intent;package=${pkg};scheme=${pkg};S.browser_fallback_url=${encodeURIComponent(playUrl)};end`;
 
-  // Fallback: se o app não abrir em 2s, vai para a Play Store
+  // Guarda o timestamp para detectar se o app abriu
+  const t0 = Date.now();
+  window.location.href = intentUrl;
+
+  // Se passaram menos de 2s e a página ainda está visível, o app não abriu
   setTimeout(() => {
-    if (!document.hidden) {
-      window.open(playUrl, "_blank", "noopener");
+    if (Date.now() - t0 < 2500 && !document.hidden) {
+      window.location.href = playUrl;
     }
   }, 2000);
 }
