@@ -9,22 +9,32 @@ function launchGame(game: Game) {
   const pkg = game.packageName;
   if (!pkg) return;
 
-  const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+  // market:// abre o app diretamente se instalado, ou a Play Store se não
+  // É o deep link mais confiável no Android Chrome/WebView
+  const marketUrl = `market://launch?id=${pkg}`;
+  const playUrl   = `https://play.google.com/store/apps/details?id=${pkg}&launch=true`;
 
-  // Android Intent via window.location — única forma confiável no Chrome Android
-  // intent://<pkg>#Intent;package=<pkg>;scheme=<pkg>;end
-  const intentUrl = `intent://${pkg}#Intent;package=${pkg};scheme=${pkg};S.browser_fallback_url=${encodeURIComponent(playUrl)};end`;
+  // Tenta market:// (abre o app se instalado)
+  const a = document.createElement("a");
+  a.href = marketUrl;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 
-  // Guarda o timestamp para detectar se o app abriu
-  const t0 = Date.now();
-  window.location.href = intentUrl;
-
-  // Se passaram menos de 2s e a página ainda está visível, o app não abriu
+  // Fallback após 1.5s: se não abriu, vai para Play Store em nova aba
   setTimeout(() => {
-    if (Date.now() - t0 < 2500 && !document.hidden) {
-      window.location.href = playUrl;
+    if (!document.hidden) {
+      const b = document.createElement("a");
+      b.href = playUrl;
+      b.target = "_blank";
+      b.rel = "noopener noreferrer";
+      document.body.appendChild(b);
+      b.click();
+      document.body.removeChild(b);
     }
-  }, 2000);
+  }, 1500);
 }
 
 // Agrupa binds por categoria para exibir no HUD
