@@ -1,29 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Play, Gamepad2, ChevronRight, X, Check, Search } from "lucide-react";
+import { Plus, Trash2, Gamepad2, ChevronRight, X, Check, Search } from "lucide-react";
 import { useGameStore, GAME_TEMPLATES, type Game } from "@/lib/gameStore";
-import KeyMapper from "./KeyMapper";
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function GameLibrary() {
+export default function GameLibrary({
+  openGameId,
+  onOpenGame,
+}: {
+  openGameId?: string | null;
+  onOpenGame?: (id: string) => void;
+}) {
   const { games, activeGameId, setActiveGame, removeGame } = useGameStore();
   const [showAdd, setShowAdd] = useState(false);
-  const [openGame, setOpenGame] = useState<string | null>(null);
 
-  // If a game is open in mapper view
-  if (openGame) {
-    const game = games.find((g) => g.id === openGame);
-    if (game) {
-      return (
-        <GameMapperView
-          game={game}
-          onBack={() => setOpenGame(null)}
-        />
-      );
-    }
-  }
+  const openGame = (id: string) => onOpenGame?.(id);
 
   return (
     <div className="space-y-4">
@@ -53,7 +46,7 @@ export default function GameLibrary() {
         const ag = games.find((g) => g.id === activeGameId);
         if (!ag) return null;
         return (
-          <ActiveBanner game={ag} onOpen={() => setOpenGame(ag.id)} onDeactivate={() => setActiveGame(null)} />
+          <ActiveBanner game={ag} onOpen={() => openGame(ag.id)} onDeactivate={() => setActiveGame(null)} />
         );
       })()}
 
@@ -67,8 +60,8 @@ export default function GameLibrary() {
               key={game.id}
               game={game}
               isActive={game.id === activeGameId}
-              onActivate={() => { setActiveGame(game.id); setOpenGame(game.id); }}
-              onOpen={() => setOpenGame(game.id)}
+              onActivate={() => { setActiveGame(game.id); openGame(game.id); }}
+              onOpen={() => openGame(game.id)}
               onRemove={() => removeGame(game.id)}
             />
           ))}
@@ -317,103 +310,6 @@ function AddGameModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-// ─── GameMapperView ───────────────────────────────────────────────────────────
-
-function GameMapperView({ game, onBack }: { game: Game; onBack: () => void }) {
-  const { updateBinds, setActiveGame, activeGameId } = useGameStore();
-  const [activating, setActivating] = useState(false);
-  const isAlreadyActive = activeGameId === game.id;
-
-  const handleActivate = () => {
-    setActivating(true);
-    setActiveGame(game.id);
-    setTimeout(() => {
-      setActivating(false);
-      onBack();
-    }, 800);
-  };
-
-  return (
-    <div className="space-y-3">
-      {/* Game header */}
-      <div
-        className="rounded-lg p-4 flex items-center gap-3"
-        style={{
-          background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`,
-          border: `1px solid ${game.color}50`,
-        }}
-      >
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ backgroundColor: `${game.color}20`, border: `1px solid ${game.color}40` }}
-        >
-          {game.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-black text-white text-base truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
-            {game.name}
-          </p>
-          <p className="text-xs font-mono" style={{ color: game.color }}>
-            {game.genre} • {game.binds.length} teclas
-          </p>
-        </div>
-        <button
-          onClick={onBack}
-          className="text-xs font-mono text-[#444] hover:text-white transition-colors"
-        >
-          ← VOLTAR
-        </button>
-      </div>
-
-      {/* Activate toggle */}
-      <button
-        onClick={handleActivate}
-        disabled={activating}
-        className="w-full py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:cursor-not-allowed"
-        style={{
-          fontFamily: "var(--font-orbitron)",
-          backgroundColor: activating
-            ? `${game.color}40`
-            : isAlreadyActive
-            ? `${game.color}30`
-            : `${game.color}18`,
-          color: game.color,
-          border: `1px solid ${activating ? game.color : game.color + "50"}`,
-          boxShadow: activating
-            ? `0 0 20px ${game.color}40`
-            : isAlreadyActive
-            ? `0 0 16px ${game.color}25`
-            : `0 0 12px ${game.color}15`,
-        }}
-      >
-        {activating ? (
-          <>
-            <Check size={14} />
-            PERFIL ATIVADO!
-          </>
-        ) : isAlreadyActive ? (
-          <>
-            <Check size={14} />
-            PERFIL JÁ ATIVO
-          </>
-        ) : (
-          <>
-            <Play size={14} />
-            JOGAR COM ESTE PERFIL
-          </>
-        )}
-      </button>
-
-      {/* Mapper */}
-      <KeyMapper
-        initialBinds={game.binds}
-        accentColor={game.color}
-        onBindsChange={(binds) => updateBinds(game.id, binds)}
-      />
     </div>
   );
 }

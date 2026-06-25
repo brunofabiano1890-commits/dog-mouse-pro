@@ -21,7 +21,7 @@ import KeyMapper from "./KeyMapper";
 import GameLibrary from "./GameLibrary";
 import HudMapper from "./HudMapper";
 import QuickKeyButton from "./QuickKeyButton";
-import { useGameStore } from "@/lib/gameStore";
+import { useGameStore, type Game, type KeyBind } from "@/lib/gameStore";
 
 interface ActivationData {
   plan: string;
@@ -42,7 +42,9 @@ export default function Dashboard({ activation, onLogout }: Props) {
   const [masterOn, setMasterOn] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [quickKeys, setQuickKeys] = useState<{key: string; label: string}[]>([]);
-  const { games, activeGameId } = useGameStore();
+  // overlay: ID do jogo aberto em tela cheia (qualquer aba)
+  const [openGameId, setOpenGameId] = useState<string | null>(null);
+  const { games, activeGameId, setActiveGame, updateBinds } = useGameStore();
 
   const handleAddQuickKey = (key: string, label: string) => {
     setQuickKeys((prev) => {
@@ -51,8 +53,13 @@ export default function Dashboard({ activation, onLogout }: Props) {
     });
   };
 
+  // Abre direto o jogo ativo (ou vai para aba de jogos se não tiver nenhum)
   const handleOpenGames = () => {
-    setActiveTab("games");
+    if (activeGameId) {
+      setOpenGameId(activeGameId);
+    } else {
+      setActiveTab("games");
+    }
   };
 
   const planColor =
@@ -167,11 +174,26 @@ export default function Dashboard({ activation, onLogout }: Props) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {activeTab === "home"     && <HomeTab masterOn={masterOn} setMasterOn={setMasterOn} activation={activation} planColor={planColor} daysLeft={daysLeft} onOpenGames={handleOpenGames} quickKeys={quickKeys} onRemoveQuickKey={(k) => setQuickKeys((p) => p.filter((x) => x.key !== k))} hasGames={games.length > 0} activeGameName={games.find(g => g.id === activeGameId)?.name} />}
-        {activeTab === "games"    && <GameLibrary />}
+        {activeTab === "games"    && <GameLibrary openGameId={openGameId} onOpenGame={setOpenGameId} />}
         {activeTab === "hud"      && <HudMapper />}
         {activeTab === "antiban"  && <AntiBanPanel />}
         {activeTab === "settings" && <SettingsTab onLogout={onLogout} />}
       </div>
+
+      {/* ── Overlay: jogo aberto em tela cheia ── */}
+      {openGameId && (() => {
+        const game = games.find((g) => g.id === openGameId);
+        if (!game) return null;
+        return (
+          <GameOverlay
+            game={game}
+            activeGameId={activeGameId}
+            onClose={() => setOpenGameId(null)}
+            onActivate={(id) => { setActiveGame(id); setOpenGameId(null); }}
+            onUpdateBinds={updateBinds}
+          />
+        );
+      })()}
 
       {/* Quick Key FAB — visible on all tabs */}
       <QuickKeyButton onAddKey={handleAddQuickKey} />
@@ -512,6 +534,105 @@ function SettingsTab({ onLogout }: { onLogout: () => void }) {
       >
         SAIR / TROCAR CHAVE
       </button>
+    </div>
+  );
+}
+
+// ─── GameOverlay ──────────────────────────────────────────────────────────────
+// Tela cheia que aparece por cima de qualquer aba ao clicar "JOGAR"
+
+function GameOverlay({
+  game,
+  activeGameId,
+  onClose,
+  onActivate,
+  onUpdateBinds,
+}: {
+  game: Game;
+  activeGameId: string | null;
+  onClose: () => void;
+  onActivate: (id: string) => void;
+  onUpdateBinds: (gameId: string, binds: KeyBind[]) => void;
+}) {
+  const [activating, setActivating] = useState(false);
+  const isAlreadyActive = activeGameId === game.id;
+
+  const handleActivate = () => {
+    if (isAlreadyActive) { onClose(); return; }
+    setActivating(true);
+    setTimeout(() => {
+      onActivate(game.id);
+    }, 700);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#0A0A0A] max-w-md mx-auto left-1/2 -translate-x-1/2 w-full">
+      {/* Header */}
+      <div
+        className="px-4 pt-10 pb-4 flex items-center gap-3 border-b"
+        style={{
+          background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`,
+          borderColor: `${game.color}40`,
+        }}
+      >
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+          style={{ backgroundColor: `${game.color}20`, border: `1px solid ${game.color}40` }}
+        >
+          {game.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-black text-white text-base truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
+            {game.name}
+          </p>
+          <p className="text-xs font-mono" style={{ color: game.color }}>
+            {game.genre} • {game.binds.length} teclas mapeadas
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-[#555] hover:text-white transition-all"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Activate button */}
+      <div className="px-4 pt-4">
+        <button
+          onClick={handleActivate}
+          disabled={activating}
+          className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all active:scale-95 disabled:cursor-not-allowed"
+          style={{
+            fontFamily: "var(--font-orbitron)",
+            backgroundColor: activating
+              ? `${game.color}50`
+              : isAlreadyActive
+              ? `${game.color}30`
+              : game.color,
+            color: activating || isAlreadyActive ? game.color : "#0A0A0A",
+            border: `2px solid ${game.color}`,
+            boxShadow: `0 0 24px ${game.color}40`,
+          }}
+        >
+          {activating ? (
+            <><span className="animate-pulse">⚡</span> ATIVANDO...</>
+          ) : isAlreadyActive ? (
+            <>✅ PERFIL JÁ ATIVO — FECHAR</>
+          ) : (
+            <>▶ JOGAR COM ESTE PERFIL</>
+          )}
+        </button>
+      </div>
+
+      {/* Key mapper */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+        <KeyMapper
+          initialBinds={game.binds}
+          accentColor={game.color}
+          onBindsChange={(binds) => onUpdateBinds(game.id, binds)}
+        />
+      </div>
     </div>
   );
 }
