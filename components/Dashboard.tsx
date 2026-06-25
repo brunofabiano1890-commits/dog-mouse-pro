@@ -189,7 +189,7 @@ export default function Dashboard({ activation, onLogout }: Props) {
             game={game}
             activeGameId={activeGameId}
             onClose={() => setOpenGameId(null)}
-            onActivate={(id) => { setActiveGame(id); setOpenGameId(null); }}
+            onActivate={(id) => { setActiveGame(id); }}
             onUpdateBinds={updateBinds}
           />
         );
@@ -559,12 +559,14 @@ function GameOverlay({
 
   const handlePlay = () => {
     if (phase !== "idle") return;
+    // 1. Mostra animação
     setPhase("activating");
-    // Ativa o jogo imediatamente
+    // 2. Salva no store
     onActivate(game.id);
-    // Após 1.2s mostra "ATIVO!" e fecha
-    setTimeout(() => setPhase("done"), 500);
-    setTimeout(() => onClose(), 1400);
+    // 3. Mostra "ATIVADO!"
+    window.setTimeout(() => setPhase("done"), 600);
+    // 4. Fecha o overlay — só aqui, nunca antes
+    window.setTimeout(() => onClose(), 1500);
   };
 
   return (
