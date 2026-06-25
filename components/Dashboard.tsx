@@ -554,26 +554,26 @@ function GameOverlay({
   onActivate: (id: string) => void;
   onUpdateBinds: (gameId: string, binds: KeyBind[]) => void;
 }) {
-  const [activating, setActivating] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "activating" | "done">("idle");
   const isAlreadyActive = activeGameId === game.id;
 
-  const handleActivate = () => {
-    if (isAlreadyActive) { onClose(); return; }
-    setActivating(true);
-    setTimeout(() => {
-      onActivate(game.id);
-    }, 700);
+  const handlePlay = () => {
+    if (phase !== "idle") return;
+    setPhase("activating");
+    // Ativa o jogo imediatamente
+    onActivate(game.id);
+    // Após 1.2s mostra "ATIVO!" e fecha
+    setTimeout(() => setPhase("done"), 500);
+    setTimeout(() => onClose(), 1400);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#0A0A0A] max-w-md mx-auto left-1/2 -translate-x-1/2 w-full">
+
       {/* Header */}
       <div
         className="px-4 pt-10 pb-4 flex items-center gap-3 border-b"
-        style={{
-          background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`,
-          borderColor: `${game.color}40`,
-        }}
+        style={{ background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`, borderColor: `${game.color}40` }}
       >
         <div
           className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
@@ -591,42 +591,59 @@ function GameOverlay({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-[#555] hover:text-white transition-all"
+          className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-[#555] hover:text-white transition-all text-base"
         >
           ✕
         </button>
       </div>
 
-      {/* Activate button */}
-      <div className="px-4 pt-4">
+      {/* Status banner (só aparece quando já ativo) */}
+      {isAlreadyActive && phase === "idle" && (
+        <div className="mx-4 mt-4 px-4 py-2 rounded-lg flex items-center gap-2"
+          style={{ backgroundColor: `${game.color}15`, border: `1px solid ${game.color}40` }}>
+          <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: game.color }} />
+          <span className="text-xs font-mono font-bold" style={{ color: game.color }}>
+            PERFIL ATIVO — rodando agora
+          </span>
+        </div>
+      )}
+
+      {/* Botão JOGAR */}
+      <div className="px-4 pt-3">
         <button
-          onClick={handleActivate}
-          disabled={activating}
-          className="w-full py-4 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all active:scale-95 disabled:cursor-not-allowed"
+          onClick={handlePlay}
+          disabled={phase !== "idle"}
+          className="w-full rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:cursor-not-allowed"
           style={{
             fontFamily: "var(--font-orbitron)",
-            backgroundColor: activating
-              ? `${game.color}50`
-              : isAlreadyActive
-              ? `${game.color}30`
-              : game.color,
-            color: activating || isAlreadyActive ? game.color : "#0A0A0A",
+            height: "64px",
+            backgroundColor:
+              phase === "done"     ? game.color :
+              phase === "activating" ? `${game.color}80` :
+              isAlreadyActive      ? game.color :
+                                     game.color,
+            color: "#0A0A0A",
             border: `2px solid ${game.color}`,
-            boxShadow: `0 0 24px ${game.color}40`,
+            boxShadow: phase !== "idle"
+              ? `0 0 40px ${game.color}80, 0 0 80px ${game.color}30`
+              : `0 0 24px ${game.color}50`,
           }}
         >
-          {activating ? (
-            <><span className="animate-pulse">⚡</span> ATIVANDO...</>
-          ) : isAlreadyActive ? (
-            <>✅ PERFIL JÁ ATIVO — FECHAR</>
-          ) : (
-            <>▶ JOGAR COM ESTE PERFIL</>
+          {phase === "activating" && (
+            <><span style={{ fontSize: "20px" }}>⚡</span> ATIVANDO...</>
+          )}
+          {phase === "done" && (
+            <><span style={{ fontSize: "20px" }}>✅</span> PERFIL ATIVADO!</>
+          )}
+          {phase === "idle" && (
+            <><span style={{ fontSize: "20px" }}>▶</span> {isAlreadyActive ? "JOGAR AGORA" : "JOGAR COM ESTE PERFIL"}</>
           )}
         </button>
       </div>
 
       {/* Key mapper */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-6">
+        <p className="text-xs font-mono text-[#444] tracking-widest mb-3">CONFIGURAÇÃO DE TECLAS</p>
         <KeyMapper
           initialBinds={game.binds}
           accentColor={game.color}
