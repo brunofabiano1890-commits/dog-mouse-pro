@@ -21,6 +21,7 @@ import KeyMapper from "./KeyMapper";
 import GameLibrary from "./GameLibrary";
 import HudMapper from "./HudMapper";
 import QuickKeyButton from "./QuickKeyButton";
+import { useGameStore } from "@/lib/gameStore";
 
 interface ActivationData {
   plan: string;
@@ -41,12 +42,17 @@ export default function Dashboard({ activation, onLogout }: Props) {
   const [masterOn, setMasterOn] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [quickKeys, setQuickKeys] = useState<{key: string; label: string}[]>([]);
+  const { games, activeGameId } = useGameStore();
 
   const handleAddQuickKey = (key: string, label: string) => {
     setQuickKeys((prev) => {
       if (prev.find((k) => k.key === key)) return prev;
       return [...prev, { key, label }];
     });
+  };
+
+  const handleOpenGames = () => {
+    setActiveTab("games");
   };
 
   const planColor =
@@ -160,7 +166,7 @@ export default function Dashboard({ activation, onLogout }: Props) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-        {activeTab === "home"     && <HomeTab masterOn={masterOn} setMasterOn={setMasterOn} activation={activation} planColor={planColor} daysLeft={daysLeft} onOpenGames={() => setActiveTab("games")} quickKeys={quickKeys} onRemoveQuickKey={(k) => setQuickKeys((p) => p.filter((x) => x.key !== k))} />}
+        {activeTab === "home"     && <HomeTab masterOn={masterOn} setMasterOn={setMasterOn} activation={activation} planColor={planColor} daysLeft={daysLeft} onOpenGames={handleOpenGames} quickKeys={quickKeys} onRemoveQuickKey={(k) => setQuickKeys((p) => p.filter((x) => x.key !== k))} hasGames={games.length > 0} activeGameName={games.find(g => g.id === activeGameId)?.name} />}
         {activeTab === "games"    && <GameLibrary />}
         {activeTab === "hud"      && <HudMapper />}
         {activeTab === "antiban"  && <AntiBanPanel />}
@@ -217,6 +223,8 @@ function HomeTab({
   onOpenGames,
   quickKeys,
   onRemoveQuickKey,
+  hasGames,
+  activeGameName,
 }: {
   masterOn: boolean;
   setMasterOn: (v: boolean) => void;
@@ -226,6 +234,8 @@ function HomeTab({
   onOpenGames: () => void;
   quickKeys: { key: string; label: string }[];
   onRemoveQuickKey: (key: string) => void;
+  hasGames: boolean;
+  activeGameName?: string;
 }) {
   const stats = [
     { label: "PRECISÃO", value: "94%", color: "#00FF41" },
@@ -321,17 +331,24 @@ function HomeTab({
       {/* Open Game button */}
       <button
         onClick={onOpenGames}
-        className="w-full py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+        className="w-full py-4 rounded-xl font-black text-sm flex flex-col items-center justify-center gap-1 transition-all active:scale-95"
         style={{
           fontFamily: "var(--font-orbitron)",
-          background: "linear-gradient(135deg, rgba(0,255,65,0.15), rgba(0,191,255,0.08))",
-          border: "1px solid rgba(0,255,65,0.4)",
+          background: activeGameName
+            ? "linear-gradient(135deg, rgba(0,255,65,0.2), rgba(0,191,255,0.1))"
+            : "linear-gradient(135deg, rgba(0,255,65,0.1), rgba(0,191,255,0.05))",
+          border: `1px solid ${activeGameName ? "rgba(0,255,65,0.6)" : "rgba(0,255,65,0.3)"}`,
           color: "#00FF41",
-          boxShadow: "0 0 16px rgba(0,255,65,0.12)",
+          boxShadow: activeGameName ? "0 0 20px rgba(0,255,65,0.2)" : "none",
         }}
       >
-        <Gamepad2 size={16} />
-        🎮 ABRIR JOGO
+        <div className="flex items-center gap-2">
+          <Gamepad2 size={18} />
+          <span>🎮 {activeGameName ? `JOGAR: ${activeGameName.toUpperCase()}` : "ABRIR JOGO"}</span>
+        </div>
+        <span className="text-xs font-mono font-normal" style={{ color: "#00FF41", opacity: 0.6 }}>
+          {hasGames ? (activeGameName ? "jogo ativo — toque para configurar" : "toque para selecionar jogo") : "toque para adicionar seu primeiro jogo"}
+        </span>
       </button>
 
       {/* Quick key strip */}

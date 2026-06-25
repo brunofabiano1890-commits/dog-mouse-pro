@@ -8,8 +8,8 @@ import {
   type KeyPlan,
 } from "@/lib/keyStore";
 
-// Simple admin password guard — change this!
-const ADMIN_PASSWORD = "dogmaster2099";
+// Senha do administrador
+const ADMIN_PASSWORD = "Blzinn_Modz1579";
 
 function checkAuth(req: NextRequest): boolean {
   const auth = req.headers.get("x-admin-password");
