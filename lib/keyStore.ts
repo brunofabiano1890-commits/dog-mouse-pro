@@ -1,7 +1,7 @@
 // In-memory key store (persists while server is running)
 // In production, replace with a real database
 
-export type KeyPlan = "Diária" | "Mensal" | "Anual" | "MASTER";
+export type KeyPlan = "Diária" | "Semanal" | "Mensal" | "Semestral" | "Anual" | "MASTER";
 
 export interface StoredKey {
   key: string;
@@ -53,9 +53,11 @@ export function generateKeyString(): string {
 // Compute expiry date based on plan
 export function expiryForPlan(plan: KeyPlan): string {
   const d = new Date();
-  if (plan === "Diária") d.setDate(d.getDate() + 1);
-  else if (plan === "Mensal") d.setMonth(d.getMonth() + 1);
-  else if (plan === "Anual") d.setFullYear(d.getFullYear() + 1);
+  if      (plan === "Diária")    d.setDate(d.getDate() + 1);
+  else if (plan === "Semanal")   d.setDate(d.getDate() + 7);
+  else if (plan === "Mensal")    d.setMonth(d.getMonth() + 1);
+  else if (plan === "Semestral") d.setMonth(d.getMonth() + 6);
+  else if (plan === "Anual")     d.setFullYear(d.getFullYear() + 1);
   else d.setFullYear(2099); // MASTER
   return d.toISOString().split("T")[0];
 }

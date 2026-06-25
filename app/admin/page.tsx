@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 const ADMIN_PW = "Blzinn_Modz1579";
-type Plan = "Diária" | "Mensal" | "Anual";
+type Plan = "Diária" | "Semanal" | "Mensal" | "Semestral" | "Anual";
 
 interface KeyRecord {
   key: string;
@@ -56,7 +56,14 @@ function KeyManager() {
   const [filter, setFilter] = useState("Todas");
 
   const headers = { "Content-Type": "application/json", "x-admin-password": ADMIN_PW };
-  const PLAN_COLORS: Record<string, string> = { Diária: "#00BFFF", Mensal: "#00FF41", Anual: "#FFB800", MASTER: "#FF0040" };
+  const PLAN_COLORS: Record<string, string> = {
+    Diária:    "#00BFFF",
+    Semanal:   "#BF00FF",
+    Mensal:    "#00FF41",
+    Semestral: "#FF6600",
+    Anual:     "#FFB800",
+    MASTER:    "#FF0040",
+  };
 
   const fetchKeys = useCallback(async () => {
     const res = await fetch("/api/keys", { headers });
@@ -112,10 +119,12 @@ function KeyManager() {
   };
 
   const counts = {
-    total: keys.length,
-    daily: keys.filter((k) => k.plan === "Diária").length,
-    monthly: keys.filter((k) => k.plan === "Mensal").length,
-    yearly: keys.filter((k) => k.plan === "Anual").length,
+    total:      keys.length,
+    daily:      keys.filter((k) => k.plan === "Diária").length,
+    weekly:     keys.filter((k) => k.plan === "Semanal").length,
+    monthly:    keys.filter((k) => k.plan === "Mensal").length,
+    semester:   keys.filter((k) => k.plan === "Semestral").length,
+    yearly:     keys.filter((k) => k.plan === "Anual").length,
   };
 
   const displayed = filter === "Todas" ? keys : keys.filter((k) => k.plan === filter);
@@ -155,12 +164,14 @@ function KeyManager() {
 
       <div className="max-w-md mx-auto px-4 space-y-4 mt-4">
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "PESSOAS", value: people.length, color: "#BF00FF" },
-            { label: "DIÁRIAS", value: counts.daily, color: "#00BFFF" },
-            { label: "MENSAIS", value: counts.monthly, color: "#00FF41" },
-            { label: "ANUAIS", value: counts.yearly, color: "#FFB800" },
+            { label: "PESSOAS",    value: people.length,    color: "#BF00FF" },
+            { label: "DIÁRIAS",    value: counts.daily,     color: "#00BFFF" },
+            { label: "SEMANAIS",   value: counts.weekly,    color: "#BF00FF" },
+            { label: "MENSAIS",    value: counts.monthly,   color: "#00FF41" },
+            { label: "SEMESTRAIS", value: counts.semester,  color: "#FF6600" },
+            { label: "ANUAIS",     value: counts.yearly,    color: "#FFB800" },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-[#0D0D0D] border border-[#1a1a1a] rounded-lg p-2 text-center">
               <p className="text-lg font-black" style={{ fontFamily: "var(--font-orbitron)", color }}>{value}</p>
@@ -222,7 +233,13 @@ function KeyManager() {
                       <div className="px-3 pb-3 space-y-2 border-t border-[#1a1a1a] pt-3">
                         <p className="text-xs font-mono text-[#555] tracking-widest">GERAR CHAVE PARA {person.name.toUpperCase()}</p>
                         <div className="grid grid-cols-3 gap-2">
-                          {(["Diária", "Mensal", "Anual"] as Plan[]).map((p) => (
+                          {([
+                            { plan: "Diária",    icon: "📅", label: "1 DIA"  },
+                            { plan: "Semanal",   icon: "🗓️", label: "7 DIAS" },
+                            { plan: "Mensal",    icon: "📆", label: "30 DIAS" },
+                            { plan: "Semestral", icon: "🔥", label: "6 MESES" },
+                            { plan: "Anual",     icon: "⭐", label: "1 ANO"  },
+                          ] as { plan: Plan; icon: string; label: string }[]).map(({ plan: p, icon, label }) => (
                             <button key={p} onClick={() => generateForPerson(person, p)} disabled={loading}
                               className="py-2.5 rounded font-bold text-xs transition-all active:scale-95 disabled:opacity-50"
                               style={{
@@ -231,7 +248,7 @@ function KeyManager() {
                                 border: `1px solid ${PLAN_COLORS[p]}`,
                                 color: PLAN_COLORS[p],
                               }}>
-                              {loading ? "..." : p === "Diária" ? "📅 1 DIA" : p === "Mensal" ? "🗓️ 30D" : "⭐ 365D"}
+                              {loading ? "..." : `${icon} ${label}`}
                             </button>
                           ))}
                         </div>
@@ -271,7 +288,7 @@ function KeyManager() {
           <>
             {/* All keys view */}
             <div className="flex gap-1 overflow-x-auto pb-1">
-              {["Todas", "Diária", "Mensal", "Anual"].map((f) => (
+              {["Todas", "Diária", "Semanal", "Mensal", "Semestral", "Anual"].map((f) => (
                 <button key={f} onClick={() => setFilter(f)}
                   className="flex-shrink-0 px-3 py-1.5 rounded text-xs font-mono transition-all"
                   style={{ backgroundColor: filter === f ? "rgba(255,184,0,0.15)" : "#111", border: `1px solid ${filter === f ? "#FFB800" : "#222"}`, color: filter === f ? "#FFB800" : "#555" }}>
