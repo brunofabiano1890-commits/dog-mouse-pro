@@ -4,7 +4,6 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   Shield,
-  Target,
   Settings,
   Power,
   Star,
@@ -16,12 +15,10 @@ import {
   Gamepad2,
 } from "lucide-react";
 import AntiBanPanel from "./AntiBanPanel";
-import MouseSettings from "./MouseSettings";
-import KeyMapper from "./KeyMapper";
 import GameLibrary from "./GameLibrary";
 import HudMapper from "./HudMapper";
 import QuickKeyButton from "./QuickKeyButton";
-import { useGameStore, type Game, type KeyBind } from "@/lib/gameStore";
+import { useGameStore } from "@/lib/gameStore";
 
 interface ActivationData {
   plan: string;
@@ -42,9 +39,7 @@ export default function Dashboard({ activation, onLogout }: Props) {
   const [masterOn, setMasterOn] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [quickKeys, setQuickKeys] = useState<{key: string; label: string}[]>([]);
-  // overlay: ID do jogo aberto em tela cheia (qualquer aba)
-  const [openGameId, setOpenGameId] = useState<string | null>(null);
-  const { games, activeGameId, setActiveGame, updateBinds } = useGameStore();
+  const { games, activeGameId } = useGameStore();
 
   const handleAddQuickKey = (key: string, label: string) => {
     setQuickKeys((prev) => {
@@ -53,13 +48,9 @@ export default function Dashboard({ activation, onLogout }: Props) {
     });
   };
 
-  // Abre direto o jogo ativo (ou vai para aba de jogos se não tiver nenhum)
+  // Vai direto para aba de jogos — o player seleciona lá com 1 toque
   const handleOpenGames = () => {
-    if (activeGameId) {
-      setOpenGameId(activeGameId);
-    } else {
-      setActiveTab("games");
-    }
+    setActiveTab("games");
   };
 
   const planColor =
@@ -174,26 +165,11 @@ export default function Dashboard({ activation, onLogout }: Props) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {activeTab === "home"     && <HomeTab masterOn={masterOn} setMasterOn={setMasterOn} activation={activation} planColor={planColor} daysLeft={daysLeft} onOpenGames={handleOpenGames} quickKeys={quickKeys} onRemoveQuickKey={(k) => setQuickKeys((p) => p.filter((x) => x.key !== k))} hasGames={games.length > 0} activeGameName={games.find(g => g.id === activeGameId)?.name} />}
-        {activeTab === "games"    && <GameLibrary openGameId={openGameId} onOpenGame={setOpenGameId} />}
+        {activeTab === "games"    && <GameLibrary />}
         {activeTab === "hud"      && <HudMapper />}
         {activeTab === "antiban"  && <AntiBanPanel />}
         {activeTab === "settings" && <SettingsTab onLogout={onLogout} />}
       </div>
-
-      {/* ── Overlay: jogo aberto em tela cheia ── */}
-      {openGameId && (() => {
-        const game = games.find((g) => g.id === openGameId);
-        if (!game) return null;
-        return (
-          <GameOverlay
-            game={game}
-            activeGameId={activeGameId}
-            onClose={() => setOpenGameId(null)}
-            onActivate={(id) => { setActiveGame(id); }}
-            onUpdateBinds={updateBinds}
-          />
-        );
-      })()}
 
       {/* Quick Key FAB — visible on all tabs */}
       <QuickKeyButton onAddKey={handleAddQuickKey} />
@@ -538,120 +514,4 @@ function SettingsTab({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-// ─── GameOverlay ──────────────────────────────────────────────────────────────
-// Tela cheia que aparece por cima de qualquer aba ao clicar "JOGAR"
 
-function GameOverlay({
-  game,
-  activeGameId,
-  onClose,
-  onActivate,
-  onUpdateBinds,
-}: {
-  game: Game;
-  activeGameId: string | null;
-  onClose: () => void;
-  onActivate: (id: string) => void;
-  onUpdateBinds: (gameId: string, binds: KeyBind[]) => void;
-}) {
-  const [phase, setPhase] = useState<"idle" | "activating" | "done">("idle");
-  const isAlreadyActive = activeGameId === game.id;
-
-  const handlePlay = () => {
-    if (phase !== "idle") return;
-    // 1. Mostra animação
-    setPhase("activating");
-    // 2. Salva no store
-    onActivate(game.id);
-    // 3. Mostra "ATIVADO!"
-    window.setTimeout(() => setPhase("done"), 600);
-    // 4. Fecha o overlay — só aqui, nunca antes
-    window.setTimeout(() => onClose(), 1500);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#0A0A0A] max-w-md mx-auto left-1/2 -translate-x-1/2 w-full">
-
-      {/* Header */}
-      <div
-        className="px-4 pt-10 pb-4 flex items-center gap-3 border-b"
-        style={{ background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`, borderColor: `${game.color}40` }}
-      >
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ backgroundColor: `${game.color}20`, border: `1px solid ${game.color}40` }}
-        >
-          {game.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-black text-white text-base truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
-            {game.name}
-          </p>
-          <p className="text-xs font-mono" style={{ color: game.color }}>
-            {game.genre} • {game.binds.length} teclas mapeadas
-          </p>
-        </div>
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center text-[#555] hover:text-white transition-all text-base"
-        >
-          ✕
-        </button>
-      </div>
-
-      {/* Status banner (só aparece quando já ativo) */}
-      {isAlreadyActive && phase === "idle" && (
-        <div className="mx-4 mt-4 px-4 py-2 rounded-lg flex items-center gap-2"
-          style={{ backgroundColor: `${game.color}15`, border: `1px solid ${game.color}40` }}>
-          <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: game.color }} />
-          <span className="text-xs font-mono font-bold" style={{ color: game.color }}>
-            PERFIL ATIVO — rodando agora
-          </span>
-        </div>
-      )}
-
-      {/* Botão JOGAR */}
-      <div className="px-4 pt-3">
-        <button
-          onClick={handlePlay}
-          disabled={phase !== "idle"}
-          className="w-full rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-95 disabled:cursor-not-allowed"
-          style={{
-            fontFamily: "var(--font-orbitron)",
-            height: "64px",
-            backgroundColor:
-              phase === "done"     ? game.color :
-              phase === "activating" ? `${game.color}80` :
-              isAlreadyActive      ? game.color :
-                                     game.color,
-            color: "#0A0A0A",
-            border: `2px solid ${game.color}`,
-            boxShadow: phase !== "idle"
-              ? `0 0 40px ${game.color}80, 0 0 80px ${game.color}30`
-              : `0 0 24px ${game.color}50`,
-          }}
-        >
-          {phase === "activating" && (
-            <><span style={{ fontSize: "20px" }}>⚡</span> ATIVANDO...</>
-          )}
-          {phase === "done" && (
-            <><span style={{ fontSize: "20px" }}>✅</span> PERFIL ATIVADO!</>
-          )}
-          {phase === "idle" && (
-            <><span style={{ fontSize: "20px" }}>▶</span> {isAlreadyActive ? "JOGAR AGORA" : "JOGAR COM ESTE PERFIL"}</>
-          )}
-        </button>
-      </div>
-
-      {/* Key mapper */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-6">
-        <p className="text-xs font-mono text-[#444] tracking-widest mb-3">CONFIGURAÇÃO DE TECLAS</p>
-        <KeyMapper
-          initialBinds={game.binds}
-          accentColor={game.color}
-          onBindsChange={(binds) => onUpdateBinds(game.id, binds)}
-        />
-      </div>
-    </div>
-  );
-}

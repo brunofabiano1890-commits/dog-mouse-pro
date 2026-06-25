@@ -1,54 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Gamepad2, ChevronRight, X, Check, Search } from "lucide-react";
+import { Plus, Trash2, Check, Search } from "lucide-react";
 import { useGameStore, GAME_TEMPLATES, type Game } from "@/lib/gameStore";
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function GameLibrary({
-  openGameId,
-  onOpenGame,
-}: {
-  openGameId?: string | null;
-  onOpenGame?: (id: string) => void;
-}) {
+export default function GameLibrary() {
   const { games, activeGameId, setActiveGame, removeGame } = useGameStore();
   const [showAdd, setShowAdd] = useState(false);
+  const [justActivated, setJustActivated] = useState<string | null>(null);
 
-  const openGame = (id: string) => onOpenGame?.(id);
+  const handleActivate = (id: string) => {
+    setActiveGame(id);
+    setJustActivated(id);
+    setTimeout(() => setJustActivated(null), 1500);
+  };
 
   return (
     <div className="space-y-4">
-      {/* Header row */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-mono text-[#555] tracking-widest">BIBLIOTECA DE JOGOS</p>
+          <p className="text-xs font-mono text-[#555] tracking-widest">SELECIONE O JOGO</p>
           <p className="text-xs font-mono text-[#333]">{games.length} jogo{games.length !== 1 ? "s" : ""} adicionado{games.length !== 1 ? "s" : ""}</p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 px-3 py-2 rounded text-xs font-bold transition-all active:scale-95"
-          style={{
-            fontFamily: "var(--font-orbitron)",
-            backgroundColor: "rgba(0,255,65,0.12)",
-            color: "#00FF41",
-            border: "1px solid rgba(0,255,65,0.4)",
-          }}
+          style={{ fontFamily: "var(--font-orbitron)", backgroundColor: "rgba(0,255,65,0.12)", color: "#00FF41", border: "1px solid rgba(0,255,65,0.4)" }}
         >
-          <Plus size={12} />
-          ADICIONAR
+          <Plus size={12} /> ADICIONAR
         </button>
       </div>
-
-      {/* Active game banner */}
-      {activeGameId && (() => {
-        const ag = games.find((g) => g.id === activeGameId);
-        if (!ag) return null;
-        return (
-          <ActiveBanner game={ag} onOpen={() => openGame(ag.id)} onDeactivate={() => setActiveGame(null)} />
-        );
-      })()}
 
       {/* Game list */}
       {games.length === 0 ? (
@@ -60,8 +44,8 @@ export default function GameLibrary({
               key={game.id}
               game={game}
               isActive={game.id === activeGameId}
-              onActivate={() => { setActiveGame(game.id); openGame(game.id); }}
-              onOpen={() => openGame(game.id)}
+              justActivated={justActivated === game.id}
+              onSelect={() => handleActivate(game.id)}
               onRemove={() => removeGame(game.id)}
             />
           ))}
@@ -74,49 +58,7 @@ export default function GameLibrary({
   );
 }
 
-// ─── ActiveBanner ─────────────────────────────────────────────────────────────
 
-function ActiveBanner({ game, onOpen, onDeactivate }: { game: Game; onOpen: () => void; onDeactivate: () => void }) {
-  return (
-    <div
-      className="rounded-lg p-3 flex items-center gap-3 cursor-pointer active:scale-95 transition-all"
-      style={{
-        background: `linear-gradient(135deg, ${game.bgColor}, #0A0A0A)`,
-        border: `1px solid ${game.color}60`,
-        boxShadow: `0 0 20px ${game.color}20`,
-      }}
-      onClick={onOpen}
-    >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-        style={{ backgroundColor: `${game.color}20`, border: `1px solid ${game.color}40` }}
-      >
-        {game.icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: game.color }} />
-          <span className="text-xs font-mono text-[#555]">ATIVO AGORA</span>
-        </div>
-        <p className="font-bold text-sm text-white truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
-          {game.name}
-        </p>
-        <p className="text-xs font-mono" style={{ color: game.color }}>
-          {game.binds.length} teclas mapeadas
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={(e) => { e.stopPropagation(); onDeactivate(); }}
-          className="w-7 h-7 rounded flex items-center justify-center bg-[#1a1a1a] border border-[#333] hover:border-[#FF0040] hover:text-[#FF0040] text-[#555] transition-all"
-        >
-          <X size={12} />
-        </button>
-        <ChevronRight size={16} style={{ color: game.color }} />
-      </div>
-    </div>
-  );
-}
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 
@@ -317,85 +259,74 @@ function AddGameModal({ onClose }: { onClose: () => void }) {
 // ─── GameCard ─────────────────────────────────────────────────────────────────
 
 function GameCard({
-  game, isActive, onActivate, onOpen, onRemove,
+  game, isActive, justActivated, onSelect, onRemove,
 }: {
   game: Game;
   isActive: boolean;
-  onActivate: () => void;
-  onOpen: () => void;
+  justActivated: boolean;
+  onSelect: () => void;
   onRemove: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
 
   return (
     <div
-      className="rounded-lg overflow-hidden transition-all"
+      className="rounded-xl overflow-hidden transition-all"
       style={{
-        border: `1px solid ${isActive ? game.color + "60" : "#1a1a1a"}`,
-        boxShadow: isActive ? `0 0 12px ${game.color}20` : "none",
+        border: `2px solid ${isActive ? game.color : "#1a1a1a"}`,
+        boxShadow: isActive ? `0 0 18px ${game.color}35` : "none",
       }}
     >
       <div
-        className="flex items-center gap-3 p-3 cursor-pointer active:scale-[0.98] transition-all"
-        style={{ background: isActive ? `linear-gradient(135deg, ${game.bgColor}80, #0D0D0D)` : "#0D0D0D" }}
-        onClick={isActive ? onOpen : onActivate}
+        className="flex items-center gap-3 p-4 cursor-pointer active:scale-[0.97] transition-all"
+        style={{ background: isActive ? `linear-gradient(135deg, ${game.bgColor}, #0D0D0D)` : "#0D0D0D" }}
+        onClick={() => { if (!confirm) onSelect(); }}
       >
         {/* Icon */}
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl relative"
-          style={{ backgroundColor: `${game.color}15`, border: `1px solid ${game.color}30` }}
+          className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 text-3xl relative"
+          style={{ backgroundColor: `${game.color}18`, border: `1px solid ${game.color}40` }}
         >
           {game.icon}
           {isActive && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center animate-pulse"
               style={{ backgroundColor: game.color }}>
-              <Check size={8} color="#000" />
+              <Check size={10} color="#000" />
             </div>
           )}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-bold text-sm text-white truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
-              {game.name}
-            </p>
-          </div>
-          <p className="text-xs font-mono text-[#555]">{game.genre}</p>
-          <p className="text-xs font-mono mt-0.5" style={{ color: game.color + "99" }}>
-            {game.binds.length} teclas • toque para {isActive ? "abrir" : "ativar"}
+          <p className="font-bold text-sm text-white truncate" style={{ fontFamily: "var(--font-orbitron)" }}>
+            {game.name}
           </p>
+          <p className="text-xs font-mono text-[#555]">{game.genre} • {game.binds.length} teclas</p>
+          <div className="mt-1">
+            {justActivated ? (
+              <span className="text-xs font-bold font-mono" style={{ color: game.color }}>✅ ATIVADO!</span>
+            ) : isActive ? (
+              <span className="text-xs font-bold font-mono animate-pulse" style={{ color: game.color }}>● ATIVO AGORA</span>
+            ) : (
+              <span className="text-xs font-mono text-[#444]">toque para selecionar</span>
+            )}
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Delete */}
+        <div className="flex-shrink-0">
           {confirm ? (
-            <div className="flex gap-1">
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                className="px-2 py-1 rounded text-xs font-mono text-[#FF0040] border border-[#FF0040]/40 hover:bg-[#FF0040]/10"
-              >
-                SIM
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setConfirm(false); }}
-                className="px-2 py-1 rounded text-xs font-mono text-[#555] border border-[#333]"
-              >
-                NÃO
-              </button>
+            <div className="flex flex-col gap-1">
+              <button onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                className="px-2 py-1 rounded text-xs font-mono text-[#FF0040] border border-[#FF0040]/40">SIM</button>
+              <button onClick={(e) => { e.stopPropagation(); setConfirm(false); }}
+                className="px-2 py-1 rounded text-xs font-mono text-[#555] border border-[#333]">NÃO</button>
             </div>
           ) : (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
-                className="w-7 h-7 rounded flex items-center justify-center bg-[#111] border border-[#222] hover:border-[#FF0040]/50 hover:text-[#FF0040] text-[#333] transition-all"
-              >
-                <Trash2 size={12} />
-              </button>
-              <div className="w-7 h-7 rounded flex items-center justify-center" style={{ color: game.color }}>
-                <ChevronRight size={16} />
-              </div>
-            </>
+            <button onClick={(e) => { e.stopPropagation(); setConfirm(true); }}
+              className="w-8 h-8 rounded flex items-center justify-center bg-[#111] border border-[#222] text-[#333] hover:text-[#FF0040] hover:border-[#FF0040]/40 transition-all">
+              <Trash2 size={13} />
+            </button>
           )}
         </div>
       </div>
