@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Check, Search } from "lucide-react";
 import { useGameStore, GAME_TEMPLATES, type Game } from "@/lib/gameStore";
+import GameLauncher from "./GameLauncher";
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -10,12 +11,23 @@ export default function GameLibrary() {
   const { games, activeGameId, setActiveGame, removeGame } = useGameStore();
   const [showAdd, setShowAdd] = useState(false);
   const [justActivated, setJustActivated] = useState<string | null>(null);
+  const [launchingGame, setLaunchingGame] = useState<Game | null>(null);
 
   const handleActivate = (id: string) => {
     setActiveGame(id);
     setJustActivated(id);
     setTimeout(() => setJustActivated(null), 1500);
   };
+
+  const handleLaunch = (game: Game) => {
+    setActiveGame(game.id);
+    setLaunchingGame(game);
+  };
+
+  // Se estiver lançando um jogo, mostra o launcher em tela cheia
+  if (launchingGame) {
+    return <GameLauncher game={launchingGame} onClose={() => setLaunchingGame(null)} />;
+  }
 
   return (
     <div className="space-y-4">
@@ -46,6 +58,7 @@ export default function GameLibrary() {
               isActive={game.id === activeGameId}
               justActivated={justActivated === game.id}
               onSelect={() => handleActivate(game.id)}
+              onLaunch={() => handleLaunch(game)}
               onRemove={() => removeGame(game.id)}
             />
           ))}
@@ -259,12 +272,13 @@ function AddGameModal({ onClose }: { onClose: () => void }) {
 // ─── GameCard ─────────────────────────────────────────────────────────────────
 
 function GameCard({
-  game, isActive, justActivated, onSelect, onRemove,
+  game, isActive, justActivated, onSelect, onLaunch, onRemove,
 }: {
   game: Game;
   isActive: boolean;
   justActivated: boolean;
   onSelect: () => void;
+  onLaunch: () => void;
   onRemove: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
@@ -330,6 +344,22 @@ function GameCard({
           )}
         </div>
       </div>
+
+      {/* Botão JOGAR — aparece quando o jogo está selecionado */}
+      {isActive && (
+        <button
+          onClick={onLaunch}
+          className="w-full py-3.5 font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+          style={{
+            fontFamily: "var(--font-orbitron)",
+            backgroundColor: game.color,
+            color: "#0A0A0A",
+            boxShadow: `0 0 16px ${game.color}60`,
+          }}
+        >
+          ▶ JOGAR {game.name.toUpperCase()} AGORA
+        </button>
+      )}
     </div>
   );
 }

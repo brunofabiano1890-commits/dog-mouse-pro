@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import AntiBanPanel from "./AntiBanPanel";
 import GameLibrary from "./GameLibrary";
+import GameLauncher from "./GameLauncher";
+import { type Game } from "@/lib/gameStore";
 import HudMapper from "./HudMapper";
 import QuickKeyButton from "./QuickKeyButton";
 import { useGameStore } from "@/lib/gameStore";
@@ -39,7 +41,8 @@ export default function Dashboard({ activation, onLogout }: Props) {
   const [masterOn, setMasterOn] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [quickKeys, setQuickKeys] = useState<{key: string; label: string}[]>([]);
-  const { games, activeGameId } = useGameStore();
+  const { games, activeGameId, setActiveGame } = useGameStore();
+  const [launchGameId, setLaunchGameId] = useState<string | null>(null);
 
   const handleAddQuickKey = (key: string, label: string) => {
     setQuickKeys((prev) => {
@@ -48,9 +51,13 @@ export default function Dashboard({ activation, onLogout }: Props) {
     });
   };
 
-  // Vai direto para aba de jogos — o player seleciona lá com 1 toque
+  // Se tem jogo ativo, lança direto. Senão vai para aba de jogos.
   const handleOpenGames = () => {
-    setActiveTab("games");
+    if (activeGameId) {
+      setLaunchGameId(activeGameId);
+    } else {
+      setActiveTab("games");
+    }
   };
 
   const planColor =
@@ -170,6 +177,13 @@ export default function Dashboard({ activation, onLogout }: Props) {
         {activeTab === "antiban"  && <AntiBanPanel />}
         {activeTab === "settings" && <SettingsTab onLogout={onLogout} />}
       </div>
+
+      {/* GameLauncher overlay — ativado pelo botão JOGAR da Home */}
+      {launchGameId && (() => {
+        const g = games.find(x => x.id === launchGameId);
+        if (!g) return null;
+        return <GameLauncher game={g} onClose={() => setLaunchGameId(null)} />;
+      })()}
 
       {/* Quick Key FAB — visible on all tabs */}
       <QuickKeyButton onAddKey={handleAddQuickKey} />

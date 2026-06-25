@@ -18,6 +18,7 @@ export interface Game {
   color: string;       // primary accent color
   bgColor: string;     // card bg gradient stop
   icon: string;        // emoji fallback
+  packageName?: string; // Android package to launch
   binds: KeyBind[];
   addedAt: string;
   isActive: boolean;   // currently selected/running
@@ -49,6 +50,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: GREEN,
     bgColor: "#001a00",
     icon: "🔥",
+    packageName: "com.dts.freefireth",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -71,6 +73,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: AMBER,
     bgColor: "#1a1000",
     icon: "🪖",
+    packageName: "com.tencent.ig",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -95,6 +98,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: ORNG,
     bgColor: "#1a0800",
     icon: "💀",
+    packageName: "com.activision.callofduty.shooter",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -118,6 +122,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: BLUE,
     bgColor: "#001020",
     icon: "⚡",
+    packageName: "com.epicgames.fortnite",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -139,6 +144,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: RED,
     bgColor: "#1a0000",
     icon: "☢️",
+    packageName: "com.activision.callofduty.warzone",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -162,6 +168,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: RED,
     bgColor: "#1a0010",
     icon: "🎯",
+    packageName: "com.riotgames.league.teamfighttactics",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -185,6 +192,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: RED,
     bgColor: "#1a0500",
     icon: "🦅",
+    packageName: "com.ea.gp.apexlegendsmobilefps",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
@@ -207,6 +215,7 @@ export const GAME_TEMPLATES: Omit<Game, "id" | "addedAt" | "isActive">[] = [
     color: AMBER,
     bgColor: "#0f0c00",
     icon: "💣",
+    packageName: "com.valvesoftware.android.steam.community",
     binds: [
       { key: "W",     code: "KeyW",   action: "move_fwd",   color: GREEN },
       { key: "S",     code: "KeyS",   action: "move_back",  color: GREEN },
