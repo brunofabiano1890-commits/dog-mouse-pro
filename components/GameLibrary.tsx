@@ -324,7 +324,19 @@ function AddGameModal({ onClose }: { onClose: () => void }) {
 // ─── GameMapperView ───────────────────────────────────────────────────────────
 
 function GameMapperView({ game, onBack }: { game: Game; onBack: () => void }) {
-  const { updateBinds, setActiveGame } = useGameStore();
+  const { updateBinds, setActiveGame, activeGameId } = useGameStore();
+  const [activating, setActivating] = useState(false);
+  const isAlreadyActive = activeGameId === game.id;
+
+  const handleActivate = () => {
+    setActivating(true);
+    setActiveGame(game.id);
+    setTimeout(() => {
+      setActivating(false);
+      onBack();
+    }, 800);
+  };
+
   return (
     <div className="space-y-3">
       {/* Game header */}
@@ -359,18 +371,41 @@ function GameMapperView({ game, onBack }: { game: Game; onBack: () => void }) {
 
       {/* Activate toggle */}
       <button
-        onClick={() => setActiveGame(game.id)}
-        className="w-full py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95"
+        onClick={handleActivate}
+        disabled={activating}
+        className="w-full py-3 rounded font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:cursor-not-allowed"
         style={{
           fontFamily: "var(--font-orbitron)",
-          backgroundColor: `${game.color}18`,
+          backgroundColor: activating
+            ? `${game.color}40`
+            : isAlreadyActive
+            ? `${game.color}30`
+            : `${game.color}18`,
           color: game.color,
-          border: `1px solid ${game.color}50`,
-          boxShadow: `0 0 12px ${game.color}15`,
+          border: `1px solid ${activating ? game.color : game.color + "50"}`,
+          boxShadow: activating
+            ? `0 0 20px ${game.color}40`
+            : isAlreadyActive
+            ? `0 0 16px ${game.color}25`
+            : `0 0 12px ${game.color}15`,
         }}
       >
-        <Play size={14} />
-        JOGAR COM ESTE PERFIL
+        {activating ? (
+          <>
+            <Check size={14} />
+            PERFIL ATIVADO!
+          </>
+        ) : isAlreadyActive ? (
+          <>
+            <Check size={14} />
+            PERFIL JÁ ATIVO
+          </>
+        ) : (
+          <>
+            <Play size={14} />
+            JOGAR COM ESTE PERFIL
+          </>
+        )}
       </button>
 
       {/* Mapper */}
