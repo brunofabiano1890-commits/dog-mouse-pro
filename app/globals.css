@@ -4,25 +4,25 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: oklch(0.07 0 0);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.1 0 0);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.1 0 0);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.75 0.3 142);
+  --primary-foreground: oklch(0.07 0 0);
+  --secondary: oklch(0.15 0 0);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.15 0 0);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.55 0.27 15);
+  --accent-foreground: oklch(0.95 0 0);
+  --destructive: oklch(0.55 0.27 15);
+  --destructive-foreground: oklch(0.95 0 0);
+  --border: oklch(0.2 0.05 142);
+  --input: oklch(0.15 0 0);
+  --ring: oklch(0.75 0.3 142);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -121,7 +121,72 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Space Mono', monospace;
   }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { box-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41, 0 0 20px #00FF41; }
+  50% { box-shadow: 0 0 10px #00FF41, 0 0 25px #00FF41, 0 0 50px #00FF41; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes matrix-rain {
+  0% { opacity: 0; transform: translateY(-20px); }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(20px); }
+}
+
+.neon-green {
+  color: #00FF41;
+  text-shadow: 0 0 5px #00FF41, 0 0 10px #00FF41;
+}
+
+.neon-red {
+  color: #FF0040;
+  text-shadow: 0 0 5px #FF0040, 0 0 10px #FF0040;
+}
+
+.neon-border {
+  border: 1px solid #00FF41;
+  box-shadow: 0 0 5px #00FF41, inset 0 0 5px rgba(0, 255, 65, 0.1);
+}
+
+.neon-border-red {
+  border: 1px solid #FF0040;
+  box-shadow: 0 0 5px #FF0040, inset 0 0 5px rgba(255, 0, 64, 0.1);
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s infinite;
+}
+
+.cursor-blink::after {
+  content: '|';
+  animation: blink 1s infinite;
+  color: #00FF41;
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.grid-bg {
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 nextjs-portal {
