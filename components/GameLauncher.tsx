@@ -5,9 +5,9 @@ import type { Game, KeyBind } from "@/lib/gameStore";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Abre a Play Store em nova aba — única ação confiável de um PWA/browser
+// Redireciona para a Play Store — window.location nunca é bloqueado pelo Chrome
 function openPlayStore(pkg: string) {
-  window.open(`https://play.google.com/store/apps/details?id=${pkg}`, "_blank", "noopener");
+  window.location.href = `https://play.google.com/store/apps/details?id=${pkg}`;
 }
 
 // Agrupa binds por categoria para exibir no HUD
